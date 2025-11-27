@@ -1,0 +1,21 @@
+name: Module CI/CD Workflow
+
+on:
+  push:
+    tags: ['v*', 'v*.*', 'v*.*.*']
+  workflow_dispatch:
+
+jobs:
+  main-template:
+    uses: VekRest/workflow-templates/.github/workflows/main-template.yml@main
+    with:
+      sonar_project_key: module
+      sonar_org: vekrest
+      dockerhub_repo: vekrest-module
+      maven_group: com.vekrest.module
+      maven_artifact: module
+    secrets:
+      sonar_token: ${{ secrets.SONAR_TOKEN }}
+      dockerhub_user: ${{ secrets.DOCKERHUB_USER }}
+      dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
+      release_token: ${{ secrets.RELEASE_TOKEN }}
