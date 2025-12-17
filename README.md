@@ -2,7 +2,7 @@
 
 O Projeto VekRest foi desenvolvido em 4 módulos, com o objetivo de aplicar tecnologias e padrões de desenvolvimento modernos em um projeto robusto e inter conectado, utilizando Clean Architecture e padrões SOLID.
 
-## 🧩 MÓDULOS DO PROJETO
+## 🧩 MÓDULOS DO PROJETO (4 Módulos e 7 Aplicações)
 | Aplicação      | Descrição                                          | Módulo | Link                                                                                                 |
 |----------------|----------------------------------------------------|--------|------------------------------------------------------------------------------------------------------|
 | VekClient      | Aplicação de CRUD de Pessoa                        | 1      | [Repositório VekClient Módulo 1](https://github.com/VekRest/vekrest-vekclient-modulo1)               |
@@ -14,65 +14,55 @@ O Projeto VekRest foi desenvolvido em 4 módulos, com o objetivo de aplicar tecn
 | VekConsumerAPI | Consumer REST - Consumer Kafka com API REST        | 4.2    | [Repositório VekConsumerRest Módulo 4.2](https://github.com/VekRest/vekrest-vekconsumerapi-modulo4.2) | 
 
 > Cada módulo é independente, possuindo seu próprio repositório, Dockerfile e docker-compose.yml para facilitar o deploy e testes isolados.
-> Porém, todos os módulos podem ser integrados para formar um sistema completo e funcional.
+
+> Porém, todos os módulos podem ser integrados para formar um sistema completo e funcional, como será demonstrado abaixo.
 
 ---
 
-## ⚙️ Objetivo
+# 📦 Instalação e Configuração do Ambiente (Integração de TODOS os Módulos)
 
-Módulo 1
-Crie uma API REST utilizando Spring Boot (versão 3+).
-A API deve conter um CRUD de Pessoa (Criar, Ler, Atualizar e Deletar), com os seguintes requisitos:
+### 1️⃣ Clone este repositório
+```bash
+# Clonar um por um:
+git clone https://github.com/VekRest/VekRest.git
 
-O retorno do serviço deve ser paginado, mostrando 10 itens por página.
+# Entre na pasta do projeto
+cd VekRest
+```
 
-Apenas pessoas com o atributo ativo = true devem ser retornadas.
+### 2️⃣ Construa os containers
+```bash
+docker-compose up -d
+```
 
-Utilize o banco de dados da sua escolha e crie uma tabela com o seguinte padrão:
+### 3️⃣ Após a finalização do comando, aguarde de 1 a 2 minutos para todas as aplicações iniciarem
 
-ID NOME DT_NASCIMENTO ATIVO
-Os logs da aplicação devem ser enviados ao Graylog.
+### 4️⃣ Execute o seguinte cURL:
 
-No seu docker-compose, adicione todas as imagens utilizadas (banco de dados, Graylog, aplicação, etc.).
+```bash
+curl --location 'http://localhost:8083/vekrest/vekproducer/v1/client' \
+--header 'Content-Type: application/json' \
+--data '{
+    "name": "Vek",
+    "birth": "2023-01-01",
+    "address": {
+        "cep": "03759040",
+        "state": "SP"
+    }
+}'
+```
 
-Módulo 2
-Crie uma API REST de Login com controle de acesso por usuário e senha.
-Requisitos:
+### 5️⃣ Após retornar status 201, verifique os logs dos Consumers para comprovar o recebimento da mensagem Kafka
 
-Ao enviar um usuário e senha válidos, o sistema deve retornar, através do endpoint /login, um token de autenticação (Bearer Token).
+### 6️⃣ Para atestar que um cliente foi criado com a requisição anterior, execute o seguinte cURL:
 
-Crie um API Gateway e garanta que sua aplicação de Login só possa ser acessada através de uma rota no Gateway.
+```bash
+curl --location 'http://localhost:8080/vekrest/vekclient/v1/client?page=0' \
+--header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJzaXN0ZW1hIiwiaWF0IjoxNzY0MjU5MDc1LCJleHAiOjQ5MTc4NTkwNzV9.CH6C_uDbqysBFaXhDz0I_19LkHfhxFT9PYe4Y00wV90' \
+--data ''
+```
 
-O container da aplicação de Login não deve expor sua porta diretamente (configure o Docker adequadamente).
-
-Inclua o Dockerfile necessário para a construção da aplicação.
-
-Módulo 3
-Crie uma função Lambda que escute um tópico Kafka e exiba no console a mensagem recebida, por exemplo:
-
-A mensagem chegou: <mensagem>
-Em seguida:
-
-Gere uma imagem Docker dessa aplicação.
-
-Publique a imagem no DockerHub através de uma GitHub Action configurada no repositório.
-
-Módulo 4
-Crie três aplicações Spring Boot com Kafka:
-
-1 produtor
-
-2 consumidores
-
-Requisitos:
-
-Garanta que uma mensagem enviada pelo produtor seja consumida pelas duas aplicações.
-
-Configure corretamente o Group ID no Kafka.
-
-Garanta resiliência com três brokers Kafka.
-
-Configure cinco partições para garantir redundância e melhor paralelismo na leitura das mensagens.
+> Deve retornar o cliente cadastrado na listagem
 
 ---
 
@@ -95,73 +85,8 @@ Configure cinco partições para garantir redundância e melhor paralelismo na l
 
 ---
 
-## 📜 Licença
-> Este projeto é distribuído sob a licença GPL-3.0. Consulte o arquivo [LICENCE](LICENSE.txt)
-para mais detalhes.
-
----
-
-# 📦 Instalação e Configuração do Ambiente (Integração de TODOS os Módulos)
-
-## 1° Método (Clonando todos as aplicações individualmente)
-
-> Aplicação Gateway principal para integração de todos os módulos:  [VekGateway](https://github.com/VekRest/vekrest-vekgateway-modulo2)
-> Nesta aplicação, descomente as últimas linhas do docker-compose.yml para subir todas as aplicações juntas.
-
-### 1️⃣ Clone todos os repositórios das aplicações do projeto
-```bash
-# Clonar um por um:
-git clone <repositório_da_aplicação>
-````
-
-### 2️⃣ Construa os containers de cada aplicação individualmente
-```bash
-# Dentro da pasta de cada aplicação, rode:
-mvn clean package -DskipTests
-
-# Depois, construa a imagem Docker de cada aplicação:
-docker build -t vekrest/<aplicação>:latest .
-
-# Descomente as últimas linhas do docker-compose.yml da aplicação VekGateway para subir todas as aplicações juntas
-docker-compose up -d
-```
-
-### 3️⃣ Verifique se todas as aplicações subiram corretamente no Docker Desktop e acompanhe os Logs
-
----
-
-## 2° Método (Clonando apenas o repositório do Gateway e construindo containers do Docker Hub)
-
-### 1️⃣ Clone o repositório do Gateway
-```bash
-git clone https://github.com/VekRest/vekrest-vekgateway-modulo2.git
-
-cd vekrest-vekgateway-modulo2
-````
-
-### 2️⃣ Construa os containers de cada aplicação a partir do Docker Hub
-```bash
-# Dentro da pasta da aplicação VekGateway, rode:
-docker-compose -f docker-compose-full.yml up -d
-```
-
-### 3️⃣ Verifique se todas as aplicações subiram corretamente no Docker Desktop e acompanhe os Logs
-
----
-
 ## Postman Collection
 
 > Link para download da coleção Postman utilizada nos testes da API: [Postman Collection VekRest](https://web.postman.co/workspace/My-Workspace~e702bcc2-18e9-41e7-86d7-21df963c99df/folder/33703402-f59218e7-8804-436c-8866-2693c75b9eb6?action=share&source=copy-link&creator=33703402&ctx=documentation)
-
----
-
-## ✍️ Autor
-
-<div align="center">
-
-| [<img src="https://avatars.githubusercontent.com/u/98980071" width=115><br><sub>Victor Cardoso</sub>](https://github.com/vek03)
-| :---: |
-
-</div>
 
 ---
